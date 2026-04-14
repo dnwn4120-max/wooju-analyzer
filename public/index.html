@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>취업 분석기 — 강우주</title>
+<title>입사지원 서포터 — 강우주</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&family=DM+Mono:wght@400;500&family=Pretendard:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -354,6 +354,13 @@ function loadKeys() {
 // ── 분석 결과 저장/복원 (localStorage) ──
 function saveState() {
   localStorage.setItem('state', JSON.stringify(state));
+  localStorage.setItem('currentStep', getCurrentStep());
+}
+function getCurrentStep() {
+  for (let i = 4; i >= 1; i--) {
+    if (document.getElementById('panel-' + i).classList.contains('active')) return i;
+  }
+  return 1;
 }
 function loadState() {
   try {
@@ -380,6 +387,8 @@ function loadState() {
       document.querySelector('[data-step="3"]').classList.add('done');
       document.getElementById('prev3').textContent = '경험 매칭 완료';
     }
+    const savedStep = parseInt(localStorage.getItem('currentStep') || '1');
+    goStep(savedStep);
   } catch(e) { console.log('state 복원 실패', e); }
 }
 function clearState() {
@@ -395,6 +404,7 @@ function goStep(n) {
   document.querySelectorAll('.step-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('panel-' + n).classList.add('active');
   document.querySelector(`.step-btn[data-step="${n}"]`).classList.add('active');
+  localStorage.setItem('currentStep', n);
 }
 
 // ── JD 텍스트 토글 ──
@@ -459,7 +469,7 @@ async function callClaude(messages, system) {
   const resp = await fetch(endpoint, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 4000, system, messages })
+    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 8000, system, messages })
   });
   if (!resp.ok) { const e = await resp.json(); throw new Error(e.error?.message || JSON.stringify(e)); }
   const data = await resp.json();
