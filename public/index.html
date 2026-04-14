@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>입사지원 서포터 — 강우주</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&family=DM+Mono:wght@400;500&family=Pretendard:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #0e0e0f;
@@ -25,7 +26,7 @@
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'Pretendard', sans-serif;
+    font-family: 'Pretendard', -apple-system, sans-serif;
     font-size: 14px;
     min-height: 100vh;
   }
@@ -46,7 +47,7 @@
     height: 100vh;
     overflow-y: auto;
   }
-  .logo { font-family: 'Noto Serif KR', serif; font-size: 15px; font-weight: 600; color: var(--accent); }
+  .logo { font-family: 'Pretendard', -apple-system, sans-serif; font-size: 15px; font-weight: 600; color: var(--accent); letter-spacing: -0.3px; }
   .logo span { color: var(--muted); font-weight: 400; font-size: 11px; display: block; margin-top: 3px; font-family: 'DM Mono', monospace; }
   .steps-nav { display: flex; flex-direction: column; gap: 4px; }
   .step-btn {
@@ -84,7 +85,7 @@
   .panel-tag { font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
   .panel-tag.t1 { color: var(--step1); } .panel-tag.t2 { color: var(--step2); }
   .panel-tag.t3 { color: var(--step3); } .panel-tag.t4 { color: var(--step4); }
-  .panel-title { font-family: 'Noto Serif KR', serif; font-size: 26px; font-weight: 600; letter-spacing: -0.5px; line-height: 1.3; }
+  .panel-title { font-family: 'Pretendard', -apple-system, sans-serif; font-size: 26px; font-weight: 600; letter-spacing: -0.5px; line-height: 1.3; }
   .panel-desc { color: var(--muted); font-size: 13px; margin-top: 8px; line-height: 1.6; }
   .field { margin-bottom: 20px; }
   .field label { display: block; font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 8px; font-family: 'DM Mono', monospace; }
@@ -123,7 +124,7 @@
     border-radius: 12px; padding: 28px; margin-top: 4px;
     line-height: 1.8; font-size: 13.5px; max-height: 600px; overflow-y: auto;
   }
-  .result-box h2 { font-family: 'Noto Serif KR', serif; font-size: 16px; font-weight: 600; margin: 24px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); color: var(--accent); }
+  .result-box h2 { font-family: 'Pretendard', -apple-system, sans-serif; font-size: 16px; font-weight: 600; margin: 24px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); color: var(--accent); }
   .result-box h2:first-child { margin-top: 0; }
   .result-box h3 { font-size: 13px; font-weight: 600; color: var(--accent2); margin: 16px 0 6px; }
   .result-box h4 { font-size: 12px; font-weight: 600; color: var(--step3); margin: 12px 0 4px; }
@@ -163,7 +164,7 @@
 <div class="shell">
   <aside class="sidebar">
     <div>
-      <div class="logo">취업 분석기
+      <div class="logo">입사지원 서포터
         <span>for 강우주 · v1.0</span>
       </div>
     </div>
@@ -469,7 +470,7 @@ async function callClaude(messages, system) {
   const resp = await fetch(endpoint, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 8000, system, messages })
+    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 4000, system, messages })
   });
   if (!resp.ok) { const e = await resp.json(); throw new Error(e.error?.message || JSON.stringify(e)); }
   const data = await resp.json();
