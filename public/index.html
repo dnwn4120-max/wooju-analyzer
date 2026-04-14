@@ -124,6 +124,7 @@
     border-radius: 12px; padding: 28px; margin-top: 4px;
     line-height: 1.8; font-size: 13.5px; max-height: 600px; overflow-y: auto;
   }
+  .result-box br { display: block; margin: 4px 0; content: ''; }
   .result-box h2 { font-family: 'Pretendard', -apple-system, sans-serif; font-size: 16px; font-weight: 600; margin: 24px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); color: var(--accent); }
   .result-box h2:first-child { margin-top: 0; }
   .result-box h3 { font-size: 13px; font-weight: 600; color: var(--accent2); margin: 16px 0 6px; }
@@ -436,7 +437,8 @@ function renderMd(md) {
     .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
     .replace(/^- (.+)$/gm, '<li>$1</li>')
     .replace(/(<li>[\s\S]*?<\/li>)/g, s => '<ul>' + s + '</ul>')
-    .replace(/\n{2,}/g, '<br><br>');
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/\n\n/g, '<br>');
 }
 function showResult(n, text) {
   const box = document.getElementById('result' + n);
@@ -462,7 +464,7 @@ async function callClaude(messages, system, useSearch = false) {
 
   const body = {
     model: 'claude-sonnet-4-20250514',
-    max_tokens: 8000,
+    max_tokens: 16000,
     system,
     messages
   };
