@@ -816,6 +816,17 @@ async function saveToNotion() {
     return blocks;
   }
 
+  // TOP 3 섹션과 나머지 경험 매칭 분리
+  function splitTop3(text) {
+    const marker = '## 🏆 TOP 3';
+    const idx = text.indexOf(marker);
+    if (idx === -1) return { top3: '', rest: text };
+    return {
+      top3: text.slice(idx).trim(),
+      rest: text.slice(0, idx).trim()
+    };
+  }
+
   async function notionPatch(blockId, children) {
     const resp = await fetch(`/api/notion?path=blocks/${blockId}/children`, {
       method: 'PATCH',
@@ -829,6 +840,7 @@ async function saveToNotion() {
 
   const date = new Date().toLocaleDateString('ko-KR');
   const parentTitle = `${state.company} — ${date}`;
+  const { top3, rest: result3Body } = splitTop3(state.result3 || '');
 
   try {
     // 1) 상위 토글 생성
@@ -839,9 +851,19 @@ async function saveToNotion() {
     }]);
     const parentBlockId = parentResp.results[0].id;
 
-    // 2) 기업 분석 토글
-    setStatus(4, '1단계 기업 분석 저장 중...', 'running');
-    const r1 = await notionPatch(parentBlockId, [{
+    // 2) TOP 3 핵심 역량 토글 (가장 위)
+    setStatus(4, '🏆 TOP 3 저장 중...', 'running');
+    await notionPatch(parentBlockId, [{
+      type: 'toggle',
+      toggle: {
+        rich_text: [makeText('🏆 TOP 3 핵심 역량')],
+        children: textToBlocks(top3 || '경험 매칭 완료 후 자동 추출됩니다.', 90)
+      }
+    }]);
+
+    // 3) 기업 분석 토글
+    setStatus(4, '📊 기업 분석 저장 중...', 'running');
+    await notionPatch(parentBlockId, [{
       type: 'toggle',
       toggle: {
         rich_text: [makeText('📊 기업 분석')],
@@ -849,8 +871,8 @@ async function saveToNotion() {
       }
     }]);
 
-    // 3) JD 분석 토글
-    setStatus(4, '2단계 JD 분석 저장 중...', 'running');
+    // 4) JD 분석 토글
+    setStatus(4, '📋 JD 분석 저장 중...', 'running');
     await notionPatch(parentBlockId, [{
       type: 'toggle',
       toggle: {
@@ -859,13 +881,13 @@ async function saveToNotion() {
       }
     }]);
 
-    // 4) 경험 매칭 토글
-    setStatus(4, '3단계 경험 매칭 저장 중...', 'running');
+    // 5) 경험 매칭 토글 (TOP 3 제외한 본문)
+    setStatus(4, '⚡ 경험 매칭 저장 중...', 'running');
     await notionPatch(parentBlockId, [{
       type: 'toggle',
       toggle: {
         rich_text: [makeText('⚡ 경험 매칭')],
-        children: textToBlocks(state.result3, 90)
+        children: textToBlocks(result3Body || state.result3, 90)
       }
     }]);
 
