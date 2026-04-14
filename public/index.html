@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>취업 분석기 — 강우주</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&family=DM+Mono:wght@400;500&family=Pretendard:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e0f;
+    --surface: #161618;
+    --surface2: #1e1e21;
+    --border: #2a2a2e;
+    --accent: #c8f564;
+    --accent2: #6ef0c8;
+    --text: #f0f0ee;
+    --muted: #6e6e78;
+    --danger: #ff6b6b;
+    --step1: #c8f564;
+    --step2: #6ef0c8;
+    --step3: #a78bfa;
+    --step4: #f59e0b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Pretendard', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+  }
+  .shell {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: 100vh;
+  }
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 28px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .logo { font-family: 'Noto Serif KR', serif; font-size: 15px; font-weight: 600; color: var(--accent); }
+  .logo span { color: var(--muted); font-weight: 400; font-size: 11px; display: block; margin-top: 3px; font-family: 'DM Mono', monospace; }
+  .steps-nav { display: flex; flex-direction: column; gap: 4px; }
+  .step-btn {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: 8px; border: none;
+    background: transparent; color: var(--muted);
+    font-size: 13px; font-family: 'Pretendard', sans-serif;
+    cursor: pointer; text-align: left; transition: all 0.15s;
+  }
+  .step-btn:hover { background: var(--surface2); color: var(--text); }
+  .step-btn.active { background: var(--surface2); color: var(--text); }
+  .step-num {
+    width: 22px; height: 22px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-family: 'DM Mono', monospace; font-weight: 500;
+    flex-shrink: 0; border: 1px solid var(--border); background: var(--surface);
+  }
+  .step-btn[data-step="1"].active .step-num { border-color: var(--step1); color: var(--step1); background: rgba(200,245,100,0.08); }
+  .step-btn[data-step="2"].active .step-num { border-color: var(--step2); color: var(--step2); background: rgba(110,240,200,0.08); }
+  .step-btn[data-step="3"].active .step-num { border-color: var(--step3); color: var(--step3); background: rgba(167,139,250,0.08); }
+  .step-btn[data-step="4"].active .step-num { border-color: var(--step4); color: var(--step4); background: rgba(245,158,11,0.08); }
+  .step-btn.done .step-num { border-color: var(--accent); color: var(--bg); background: var(--accent); font-size: 10px; }
+  .step-label { line-height: 1.3; }
+  .step-label small { display: block; font-size: 10px; color: var(--muted); margin-top: 1px; font-family: 'DM Mono', monospace; }
+  .sidebar-info {
+    margin-top: auto; padding: 12px; background: var(--surface2);
+    border-radius: 8px; border: 1px solid var(--border);
+    font-size: 11px; color: var(--muted); line-height: 1.6;
+  }
+  .sidebar-info strong { color: var(--text); font-weight: 500; }
+  .main { padding: 40px 48px; max-width: 900px; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .panel-header { margin-bottom: 32px; }
+  .panel-tag { font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+  .panel-tag.t1 { color: var(--step1); } .panel-tag.t2 { color: var(--step2); }
+  .panel-tag.t3 { color: var(--step3); } .panel-tag.t4 { color: var(--step4); }
+  .panel-title { font-family: 'Noto Serif KR', serif; font-size: 26px; font-weight: 600; letter-spacing: -0.5px; line-height: 1.3; }
+  .panel-desc { color: var(--muted); font-size: 13px; margin-top: 8px; line-height: 1.6; }
+  .field { margin-bottom: 20px; }
+  .field label { display: block; font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 8px; font-family: 'DM Mono', monospace; }
+  .field input, .field textarea {
+    width: 100%; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 16px; color: var(--text);
+    font-size: 14px; font-family: 'Pretendard', sans-serif;
+    outline: none; transition: border-color 0.15s; resize: vertical;
+  }
+  .field input:focus, .field textarea:focus { border-color: var(--accent); }
+  .field input::placeholder, .field textarea::placeholder { color: var(--muted); }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 24px; border-radius: 8px; font-size: 13px;
+    font-weight: 500; font-family: 'Pretendard', sans-serif;
+    cursor: pointer; border: none; transition: all 0.15s;
+  }
+  .btn-primary { background: var(--accent); color: #0e0e0f; }
+  .btn-primary:hover { background: #d4f87a; transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--text); color: var(--text); }
+  .btn-notion { background: var(--surface2); color: var(--step4); border: 1px solid var(--border); }
+  .btn-notion:hover { border-color: var(--step4); }
+  .btn-notion:disabled { opacity: 0.4; cursor: not-allowed; }
+  .loading-bar { height: 2px; background: var(--border); border-radius: 1px; overflow: hidden; margin-bottom: 16px; }
+  .loading-bar-fill { height: 100%; border-radius: 1px; width: 0%; }
+  .loading-bar-fill.running { background: linear-gradient(90deg, var(--accent), var(--accent2)); animation: loadrun 1.5s ease-in-out infinite; }
+  @keyframes loadrun { 0%{width:0%;margin-left:0} 50%{width:60%;margin-left:20%} 100%{width:0%;margin-left:100%} }
+  .status-text { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); margin-bottom: 20px; min-height: 18px; }
+  .status-text.running { color: var(--accent2); }
+  .status-text.done { color: var(--accent); }
+  .status-text.error { color: var(--danger); }
+  .result-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 28px; margin-top: 4px;
+    line-height: 1.8; font-size: 13.5px; max-height: 600px; overflow-y: auto;
+  }
+  .result-box h2 { font-family: 'Noto Serif KR', serif; font-size: 16px; font-weight: 600; margin: 24px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); color: var(--accent); }
+  .result-box h2:first-child { margin-top: 0; }
+  .result-box h3 { font-size: 13px; font-weight: 600; color: var(--accent2); margin: 16px 0 6px; }
+  .result-box h4 { font-size: 12px; font-weight: 600; color: var(--step3); margin: 12px 0 4px; }
+  .result-box p { color: var(--text); margin-bottom: 8px; }
+  .result-box ul { padding-left: 18px; margin-bottom: 8px; }
+  .result-box li { color: var(--text); margin-bottom: 4px; }
+  .result-box strong { color: var(--accent); font-weight: 600; }
+  .result-box em { color: var(--step3); font-style: normal; font-weight: 500; }
+  .result-box blockquote { border-left: 2px solid var(--accent2); padding-left: 14px; color: var(--muted); margin: 12px 0; }
+  .result-box table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 12.5px; }
+  .result-box th { background: var(--surface2); padding: 8px 12px; text-align: left; color: var(--muted); font-weight: 500; border: 1px solid var(--border); font-family: 'DM Mono', monospace; font-size: 11px; }
+  .result-box td { padding: 8px 12px; border: 1px solid var(--border); vertical-align: top; line-height: 1.6; }
+  .result-box hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+  .action-row { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+  .step-connector { display: flex; align-items: center; gap: 12px; padding: 16px 20px; background: var(--surface2); border-radius: 10px; border: 1px solid var(--border); margin-bottom: 24px; }
+  .connector-text { font-size: 12px; color: var(--muted); }
+  .connector-text strong { color: var(--text); font-weight: 500; }
+  .api-section { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 28px; }
+  .api-section h4 { font-size: 12px; font-weight: 600; color: var(--muted); font-family: 'DM Mono', monospace; margin-bottom: 14px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .api-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-family: 'DM Mono', monospace; font-weight: 500; }
+  .badge-green { background: rgba(200,245,100,0.12); color: var(--accent); }
+  .badge-teal { background: rgba(110,240,200,0.12); color: var(--accent2); }
+  .badge-purple { background: rgba(167,139,250,0.12); color: var(--step3); }
+  .badge-amber { background: rgba(245,158,11,0.12); color: var(--step4); }
+  .saved-banner { display: none; padding: 10px 16px; background: rgba(200,245,100,0.1); border: 1px solid rgba(200,245,100,0.3); border-radius: 8px; font-size: 12px; color: var(--accent); font-family: 'DM Mono', monospace; margin-top: 12px; }
+  .saved-banner.show { display: block; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* JD 텍스트 입력 영역 */
+  .jd-input-toggle { font-size: 12px; color: var(--muted); cursor: pointer; margin-bottom: 12px; text-decoration: underline; font-family: 'DM Mono', monospace; }
+  .jd-input-toggle:hover { color: var(--text); }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div>
+      <div class="logo">취업 분석기
+        <span>for 강우주 · v1.0</span>
+      </div>
+    </div>
+    <nav class="steps-nav">
+      <button class="step-btn active" data-step="1" onclick="goStep(1)">
+        <div class="step-num">1</div>
+        <div class="step-label">기업 분석<small>company research</small></div>
+      </button>
+      <button class="step-btn" data-step="2" onclick="goStep(2)">
+        <div class="step-num">2</div>
+        <div class="step-label">JD 분석<small>job description</small></div>
+      </button>
+      <button class="step-btn" data-step="3" onclick="goStep(3)">
+        <div class="step-num">3</div>
+        <div class="step-label">경험 매칭<small>experience match</small></div>
+      </button>
+      <button class="step-btn" data-step="4" onclick="goStep(4)">
+        <div class="step-num">4</div>
+        <div class="step-label">노션 저장<small>save to notion</small></div>
+      </button>
+    </nav>
+    <div class="sidebar-info">
+      <strong>내 프로젝트 DB</strong><br>
+      블루타이거 Operations Manager<br>
+      · 고객 온보딩 프로세스 수립<br>
+      · 강사 교육 표준화<br>
+      · 파트타이머 관리 체계<br>
+      · 멘토링 재시청 체계<br><br>
+      <strong>노션 페이지</strong><br>
+      기업 분석 · spacekang
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- API 설정 -->
+    <div class="api-section">
+      <h4>🔑 API 설정</h4>
+      <div class="api-row">
+        <div class="field" style="margin:0">
+          <label>Anthropic API Key</label>
+          <input type="password" id="anthropicKey" placeholder="sk-ant-..." oninput="saveKeys()" />
+        </div>
+        <div class="field" style="margin:0">
+          <label>Notion Integration Token</label>
+          <input type="password" id="notionToken" placeholder="ntn_..." oninput="saveKeys()" />
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 1 -->
+    <div class="panel active" id="panel-1">
+      <div class="panel-header">
+        <div class="panel-tag t1">STEP 01</div>
+        <div class="panel-title">기업 분석</div>
+        <div class="panel-desc">분석하고 싶은 기업명을 입력하세요. 기업 현황, 최근 이슈, 경쟁사, 성장 단계를 자동 분석합니다.</div>
+      </div>
+      <div class="field">
+        <label>기업명</label>
+        <input type="text" id="companyName" placeholder="예: 코나아이, 토스, 카카오페이..." />
+      </div>
+      <div class="field">
+        <label>추가 컨텍스트 (선택)</label>
+        <input type="text" id="companyContext" placeholder="예: 핀테크, 결제 플랫폼 — 없으면 비워두세요" />
+      </div>
+      <button class="btn btn-primary" onclick="runStep1()" id="btn1">🔍 기업 분석 시작</button>
+      <div style="margin-top:28px">
+        <div class="loading-bar"><div class="loading-bar-fill" id="load1"></div></div>
+        <div class="status-text" id="status1"></div>
+        <div class="result-box" id="result1" style="display:none"></div>
+        <div class="action-row" id="action1" style="display:none">
+          <button class="btn btn-primary" onclick="goStep(2)">다음 단계 → JD 분석</button>
+          <button class="btn btn-ghost" onclick="copyResult('result1')">📋 복사</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="panel" id="panel-2">
+      <div class="panel-header">
+        <div class="panel-tag t2">STEP 02</div>
+        <div class="panel-title">JD 분석</div>
+        <div class="panel-desc">채용공고 URL을 입력하거나, JD 내용을 직접 붙여넣으세요.</div>
+      </div>
+      <div class="step-connector">
+        <div class="connector-text">🏢 기업 분석 완료: <strong id="step2-company">—</strong></div>
+      </div>
+      <div class="field">
+        <label>채용공고 URL</label>
+        <input type="url" id="jdUrl" placeholder="https://..." />
+      </div>
+      <div class="jd-input-toggle" onclick="toggleJdText()">✏️ URL 접근이 안 되면 JD 텍스트 직접 입력</div>
+      <div id="jdTextArea" style="display:none">
+        <div class="field">
+          <label>JD 내용 직접 입력</label>
+          <textarea id="jdText" rows="10" placeholder="채용공고 내용을 복사해서 붙여넣으세요..."></textarea>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="runStep2()" id="btn2">📋 JD 분석 시작</button>
+      <div style="margin-top:28px">
+        <div class="loading-bar"><div class="loading-bar-fill" id="load2"></div></div>
+        <div class="status-text" id="status2"></div>
+        <div class="result-box" id="result2" style="display:none"></div>
+        <div class="action-row" id="action2" style="display:none">
+          <button class="btn btn-primary" onclick="goStep(3)">다음 단계 → 경험 매칭</button>
+          <button class="btn btn-ghost" onclick="copyResult('result2')">📋 복사</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="panel" id="panel-3">
+      <div class="panel-header">
+        <div class="panel-tag t3">STEP 03</div>
+        <div class="panel-title">경험 매칭</div>
+        <div class="panel-desc">JD 요구사항과 내 프로젝트·경험을 1:1 매칭합니다. 이력서·포트폴리오 인사이트와 TOP3 핵심 역량을 도출합니다.</div>
+      </div>
+      <div class="step-connector">
+        <div class="connector-text">📋 JD 분석 완료 · 경험 매칭 준비됨</div>
+      </div>
+      <button class="btn btn-primary" onclick="runStep3()" id="btn3">⚡ 경험 매칭 시작</button>
+      <div style="margin-top:28px">
+        <div class="loading-bar"><div class="loading-bar-fill" id="load3"></div></div>
+        <div class="status-text" id="status3"></div>
+        <div class="result-box" id="result3" style="display:none"></div>
+        <div class="action-row" id="action3" style="display:none">
+          <button class="btn btn-primary" onclick="goStep(4)">다음 단계 → 노션 저장</button>
+          <button class="btn btn-ghost" onclick="copyResult('result3')">📋 복사</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="panel" id="panel-4">
+      <div class="panel-header">
+        <div class="panel-tag t4">STEP 04</div>
+        <div class="panel-title">노션 저장</div>
+        <div class="panel-desc">분석 결과를 노션 페이지에 자동으로 저장합니다.</div>
+      </div>
+      <div class="step-connector">
+        <div class="connector-text">✅ 3단계 분석 완료 · 저장 준비됨</div>
+      </div>
+      <div class="field">
+        <label>노션 페이지 ID</label>
+        <input type="text" id="notionPageId" value="342399acadeb808cb546fac586561b9a" />
+      </div>
+      <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px">
+        <button class="btn btn-notion" onclick="saveToNotion()" id="btn4">📝 노션에 저장하기</button>
+        <button class="btn btn-ghost" onclick="copyAllResults()">전체 복사</button>
+      </div>
+      <div class="loading-bar"><div class="loading-bar-fill" id="load4"></div></div>
+      <div class="status-text" id="status4"></div>
+      <div class="saved-banner" id="savedBanner">✓ 노션 페이지에 저장 완료!</div>
+      <div style="margin-top:32px; display:flex; flex-direction:column; gap:8px;">
+        <div style="display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:8px;">
+          <span class="badge badge-green">1단계</span>
+          <span style="font-size:13px; color:var(--muted);" id="prev1">기업 분석 결과</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:8px;">
+          <span class="badge badge-teal">2단계</span>
+          <span style="font-size:13px; color:var(--muted);" id="prev2">JD 분석 결과</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:8px;">
+          <span class="badge badge-purple">3단계</span>
+          <span style="font-size:13px; color:var(--muted);" id="prev3">경험 매칭 결과</span>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ── STATE ──
+const state = { company: '', result1: '', result2: '', result3: '' };
+
+// ── 키 저장 (localStorage) ──
+function saveKeys() {
+  localStorage.setItem('ak', document.getElementById('anthropicKey').value);
+  localStorage.setItem('nk', document.getElementById('notionToken').value);
+}
+function loadKeys() {
+  const ak = localStorage.getItem('ak') || '';
+  const nk = localStorage.getItem('nk') || '';
+  if (ak) document.getElementById('anthropicKey').value = ak;
+  if (nk) document.getElementById('notionToken').value = nk;
+}
+window.addEventListener('load', loadKeys);
+
+// ── NAVIGATION ──
+function goStep(n) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.step-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + n).classList.add('active');
+  document.querySelector(`.step-btn[data-step="${n}"]`).classList.add('active');
+}
+
+// ── JD 텍스트 토글 ──
+function toggleJdText() {
+  const el = document.getElementById('jdTextArea');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+// ── UTILS ──
+function setLoading(n, on) {
+  const el = document.getElementById('load' + n);
+  if (on) el.classList.add('running'); else el.classList.remove('running');
+}
+function setStatus(n, msg, type='') {
+  const el = document.getElementById('status' + n);
+  el.textContent = msg;
+  el.className = 'status-text' + (type ? ' ' + type : '');
+}
+function renderMd(md) {
+  return md
+    .replace(/^#### (.+)$/gm, '<h4>$1</h4>')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h2>$1</h2>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^---$/gm, '<hr>')
+    .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>[\s\S]*?<\/li>)/g, s => '<ul>' + s + '</ul>')
+    .replace(/\n{2,}/g, '<br><br>');
+}
+function showResult(n, text) {
+  const box = document.getElementById('result' + n);
+  box.style.display = 'block';
+  box.innerHTML = renderMd(text);
+  const act = document.getElementById('action' + n);
+  if (act) act.style.display = 'flex';
+}
+function copyResult(id) {
+  const el = document.getElementById(id);
+  navigator.clipboard.writeText(el.innerText);
+}
+function copyAllResults() {
+  navigator.clipboard.writeText([state.result1, state.result2, state.result3].join('\n\n---\n\n'));
+}
+
+// ── API CALL (Vercel 프록시 경유) ──
+async function callClaude(messages, system) {
+  const key = document.getElementById('anthropicKey').value.trim();
+  if (!key) throw new Error('Anthropic API Key를 입력해주세요.');
+
+  // Vercel 배포 후엔 '/api/claude', 로컬 테스트엔 직접 호출
+  const endpoint = window.location.hostname === 'localhost'
+    ? 'https://api.anthropic.com/v1/messages'
+    : '/api/claude';
+
+  const headers = window.location.hostname === 'localhost'
+    ? { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' }
+    : { 'Content-Type': 'application/json', 'x-api-key': key };
+
+  const resp = await fetch(endpoint, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 4000, system, messages })
+  });
+  if (!resp.ok) { const e = await resp.json(); throw new Error(e.error?.message || JSON.stringify(e)); }
+  const data = await resp.json();
+  return data.content[0].text;
+}
+
+// ── MY PROFILE ──
+const MY_PROFILE = `
+[강우주 프로젝트 & 경험 DB]
+
+## 현재 경력
+- 회사: 블루타이거 (웹 기반 온라인 교육 플랫폼)
+- 직책: 운영팀 / 운영 매니저 / 2022.06 - 2024.10 (2년 4개월)
+- 담당: 20개 클래스 동시 담당, CS 직접 대응, 강사(파트너) 소통, 파트타이머 운영
+- 구조: 기수제 운영 (정기개강), 수강생·강사·파트타이머를 운영팀이 전담 관리
+- 백오피스: LMS 어드민(수강생별 영상 접근 권한 설정, 반 배정 관리), Google Sheets 기반 수강 정보·프로그램 링크 통합 관리
+
+## 보유 스킬
+- Google Sheets (데이터 구조화, 대시보드 구축, 모니터링)
+- Notion (FAQ·업무 가이드 제작, 운영 워크플로우 시각화)
+- SQL (기본 쿼리로 유저 데이터 조회·추출)
+- LMS 어드민 운영 (수강생별 영상 접근 권한 설정, 반 배정 관리)
+
+## 핵심 프로젝트
+
+### 프로젝트 01. 고객 온보딩 프로세스 수립
+- 기간: 2023.10-2023.11 / 기여도: 100% (단독)
+- 문제: 개강 2주 내 수강생 18% 과제 미제출 → 이탈·환불. 개강 초기가 환불 금액 가장 큰 구간.
+- 분석: VOC 분류 → 서비스 이용 방법 63% / 기술 오류 18% / 기타 19%. 수강생 여정 세분화 → 온보딩 1회뿐, D-14~D+14 정보 공백 발견.
+- 실행: D-14(개강 안내)→D-5(LMS 첫 접속 유도)→D-2(자기소개 유도)→D-1(리마인드)→D+14(학습 알림) 단계별 안내 프로세스 설계. 세일즈팀과 협업해 발송 시트 제작.
+- 결과: 초기 2주 학습 이탈율 61% 감소(18%→7%), 초기 2주 환불율 21% 개선(15%→12%)
+
+### 프로젝트 02. 강사 교육 프로세스 표준화
+- 기간: 2024.08 / 전사 TF 하위 프로젝트 / 운영 기여도 100%
+- 목표: 내부 인력 추가 채용 없이 확장 가능한 운영 체계 구축
+- 문제: 신규 클래스 12개 오픈, 수강생 50%↑, 강사 51%↑. D-1 기준 업무 완수율 55% — 심각한 병목.
+- 분석: 클래스 오픈 프로세스 전수 분석 → 1구간(94%)/2구간(25%, 강사 온보딩)/3구간(36%). 1:1 커뮤니케이션 비중 85% → 규모 확장 시 선형으로 리소스 증가.
+- 실행: ① 표준 워크시트 구축·일괄 제공(1그룹 시범→전체 확산) ② 1:1 미팅→단체 세션 전환(15회→6회) ③ 사전 질문 폼으로 민감 이슈 사전 식별
+- 결과: 강사 교육 소요시간 47% 감소(19h→10h), 업무 완수율 51%↑(55%→83%), 운영 오류 환불 26%p↓(51%→25%)
+
+### 프로젝트 03. 파트타이머 업무 관리 체계 구축
+- 기간: 2024.03-2024.04 / 기여도: 100% (단독)
+- 문제: 파트타이머 업무 누락을 고객 문의 후 뒤늦게 인지. 수업 영상 업로드 관련 문의 30-40건 반복. 3기수 반복.
+- 실행: 체크리스트 기반 주간 대시보드 구축 → 매일 오전 모니터링-피드백 루틴 수립. 업무 가이드 제작.
+- 결과: 누락율 75%↓(19%→4%), 완수율 81%→96%, 관련 수강생 문의 62%↓(35%→13%)
+
+### 프로젝트 04. 멘토링 재시청 체계 구축
+- 기간: 2023.06 / 기여도: 100% (단독)
+- 문제: 멘토링 결석 후 다음 주차도 결석하는 비율 67%. 결석 시 피드백 확인 수단 없음.
+- 실행: 대안 3가지 비교(Vimeo 기각·유튜브 기각·노션+줌 채택). 개발 리소스 없이 구현. 운영 규칙 문서화 후 파트타이머 이관. 피드백 정책 재설계(기준: 멘토링 참여자→과제 제출자).
+- 결과: 연속 결석률 20%p↓(67%→47%), 멘토 추가 리소스 요청 케이스 구조적 차단.
+
+## 기타 경력
+- 인천도시공사 인턴(2021.06-2021.12): 15개 센터 담당자 커뮤니케이션, 성과물 추적·리포팅
+- 인하대학교 국제통상학과 학사(2015.03-2021.02)
+`;
+
+// ── STEP 1 ──
+async function runStep1() {
+  const company = document.getElementById('companyName').value.trim();
+  const context = document.getElementById('companyContext').value.trim();
+  if (!company) { alert('기업명을 입력해주세요.'); return; }
+  document.getElementById('btn1').disabled = true;
+  setLoading(1, true); setStatus(1, '기업 분석 중...', 'running');
+  const sys = `당신은 IT 업계에서 10년 이상 근무한 시니어 비개발 직군 실무자이자 채용에 직접 참여하는 리드입니다.
+취업 준비생이 면접 전에 알아야 할 기업 분석을 아래 구조로 제공하세요. 팩트 기반, 추측은 "추정"으로 명시.
+
+## 🏢 기업 개요
+## 🏭 산업군 / 도메인 특성  
+## 📊 재무 / 규모
+## 💼 주요 사업 구조
+## 🎯 기업 미션 / 비전
+## 📰 최근 이슈 (3가지, 호재/리스크 구분)
+## ⚔️ 경쟁사 비교
+## 🏗️ 회사 특징 / 조직 문화
+## 🚀 성장 단계
+## 🎯 이 회사가 요즘 집중하는 것`;
+
+  try {
+    const r = await callClaude([{ role:'user', content:`기업명: ${company}${context?'\n추가: '+context:''}` }], sys);
+    state.result1 = r; state.company = company;
+    showResult(1, r); setStatus(1, '✓ 기업 분석 완료', 'done');
+    document.querySelector('[data-step="1"]').classList.add('done');
+    document.getElementById('step2-company').textContent = company;
+    document.getElementById('prev1').textContent = company + ' 기업 분석 완료';
+  } catch(e) { setStatus(1, '오류: ' + e.message, 'error'); }
+  finally { setLoading(1, false); document.getElementById('btn1').disabled = false; }
+}
+
+// ── STEP 2 ──
+async function runStep2() {
+  const url = document.getElementById('jdUrl').value.trim();
+  const textDirect = document.getElementById('jdText').value.trim();
+  if (!url && !textDirect) { alert('채용공고 URL 또는 JD 내용을 입력해주세요.'); return; }
+  if (!state.result1) { alert('먼저 1단계 기업 분석을 완료해주세요.'); return; }
+  document.getElementById('btn2').disabled = true;
+  setLoading(2, true); setStatus(2, 'JD 분석 중...', 'running');
+
+  let jdContent = textDirect;
+  if (!jdContent && url) {
+    try {
+      const proxy = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+      const resp = await fetch(proxy);
+      const html = await resp.text();
+      const tmp = document.createElement('div');
+      tmp.innerHTML = html;
+      jdContent = tmp.innerText.replace(/\s+/g,' ').substring(0,6000);
+    } catch { jdContent = '(URL 내용 가져오기 실패. URL: ' + url + ')'; }
+  }
+
+  const sys = `당신은 IT 업계에서 10년 이상 근무한 시니어 비개발 직군 실무자이자 채용 리드입니다.
+JD를 1문장 단위로 분해해 요구사항을 추출하고 이력서/포트폴리오 인사이트를 제공합니다.
+
+참고할 기업 분석:
+${state.result1}
+
+분석 구조:
+각 섹션 타이틀을 ## 헤더로, 각 JD 문장에 대해:
+**① JD 문장**
+**요구사항**
+- OO한 경험 / OO하는 역량 형식으로 작성
+
+**이력서/포트폴리오 인사이트**
+구체적이고 실용적인 인사이트
+
+---
+
+마지막에 ## 🏆 TOP 3 핵심 역량 (선정 기준 조건 명시 필수: 조건1=섹션첫문장/조건2=키워드반복/조건3=기업방향성일치)`;
+
+  try {
+    const r = await callClaude([{ role:'user', content:`JD 내용:\n${jdContent}\n\n합류 여정과 꼭 확인해주세요 섹션은 제외하고 분석해주세요.` }], sys);
+    state.result2 = r;
+    showResult(2, r); setStatus(2, '✓ JD 분석 완료', 'done');
+    document.querySelector('[data-step="2"]').classList.add('done');
+    document.getElementById('prev2').textContent = 'JD 분석 완료';
+  } catch(e) { setStatus(2, '오류: ' + e.message, 'error'); }
+  finally { setLoading(2, false); document.getElementById('btn2').disabled = false; }
+}
+
+// ── STEP 3 ──
+async function runStep3() {
+  if (!state.result2) { alert('먼저 2단계 JD 분석을 완료해주세요.'); return; }
+  document.getElementById('btn3').disabled = true;
+  setLoading(3, true); setStatus(3, '경험 매칭 중...', 'running');
+
+  const sys = `당신은 IT 업계에서 10년 이상 근무한 시니어 비개발 직군 실무자이자 채용 리드입니다.
+지원자의 실제 프로젝트/경험과 JD 요구사항을 매칭해 이력서·포트폴리오 작성 인사이트를 제공합니다.
+
+지원자 프로필:
+${MY_PROFILE}`;
+
+  const msg = `기업 분석:\n${state.result1}\n\nJD 분석:\n${state.result2}\n\n위 내용을 바탕으로 내 프로젝트/경험과 매칭해주세요.
+
+각 JD 문장 분석에 아래 항목을 추가하세요:
+
+**① JD 문장**
+**요구사항**
+- 요구사항들
+
+**매칭 프로젝트 또는 경험**
+내 프로젝트에서 매칭되는 내용. 없으면 솔직히 "직접 매칭 경험 없음" 명시 후 보완 전략 제시.
+
+**이력서/포트폴리오 인사이트** (내 실제 경험 기반으로 수정)
+구체적이고 실용적인 인사이트
+
+---
+
+마지막에 ## 🏆 TOP 3 핵심 역량 (내 경험과 연결해 어떻게 어필할지 포함)`;
+
+  try {
+    const r = await callClaude([{ role:'user', content:msg }], sys);
+    state.result3 = r;
+    showResult(3, r); setStatus(3, '✓ 경험 매칭 완료', 'done');
+    document.querySelector('[data-step="3"]').classList.add('done');
+    document.getElementById('prev3').textContent = '경험 매칭 완료';
+  } catch(e) { setStatus(3, '오류: ' + e.message, 'error'); }
+  finally { setLoading(3, false); document.getElementById('btn3').disabled = false; }
+}
+
+// ── STEP 4: 노션 저장 ──
+async function saveToNotion() {
+  const token = document.getElementById('notionToken').value.trim();
+  const pageId = document.getElementById('notionPageId').value.trim().replace(/-/g,'');
+  if (!token) { alert('Notion Token을 입력해주세요.'); return; }
+  if (!state.result1) { alert('1~3단계를 모두 완료해주세요.'); return; }
+
+  document.getElementById('btn4').disabled = true;
+  setLoading(4, true); setStatus(4, '노션에 저장 중...', 'running');
+
+  const title = `${state.company} — ${new Date().toLocaleDateString('ko-KR')}`;
+
+  const makeText = (t) => ({ type:'text', text:{ content: t.substring(0,2000) } });
+  const makePara = (t) => ({ type:'paragraph', paragraph:{ rich_text:[makeText(t)] } });
+  const makeH3 = (t) => ({ type:'heading_3', heading_3:{ rich_text:[makeText(t.replace(/^#+\s*/,''))] } });
+  const makeDivider = () => ({ type:'divider', divider:{} });
+
+  // 결과를 줄 단위로 분해해 블록 생성
+  function textToBlocks(text) {
+    const lines = text.split('\n').filter(l => l.trim());
+    const blocks = [];
+    for (const line of lines.slice(0, 60)) {
+      if (line.startsWith('## ') || line.startsWith('# ')) blocks.push(makeH3(line));
+      else if (line.startsWith('### ')) blocks.push(makeH3(line));
+      else if (line === '---') blocks.push(makeDivider());
+      else blocks.push(makePara(line));
+    }
+    return blocks;
+  }
+
+  const children = [
+    makeH3('📊 기업 분석'),
+    ...textToBlocks(state.result1).slice(0,20),
+    makeDivider(),
+    makeH3('📋 JD 분석'),
+    ...textToBlocks(state.result2).slice(0,20),
+    makeDivider(),
+    makeH3('⚡ 경험 매칭'),
+    ...textToBlocks(state.result3).slice(0,20),
+  ];
+
+  const toggleBlock = [{
+    type: 'toggle',
+    toggle: {
+      rich_text: [makeText(title)],
+      children: children.slice(0, 50)
+    }
+  }];
+
+  try {
+    const resp = await fetch(`/api/notion?path=blocks/${pageId}/children`, {
+      method: 'PATCH',
+      headers: { 'Content-Type':'application/json', 'x-notion-token': token },
+      body: JSON.stringify({ children: toggleBlock })
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.message || '저장 실패');
+    setStatus(4, '✓ 노션 저장 완료!', 'done');
+    document.getElementById('savedBanner').classList.add('show');
+    document.querySelector('[data-step="4"]').classList.add('done');
+  } catch(e) { setStatus(4, '오류: ' + e.message, 'error'); }
+  finally { setLoading(4, false); document.getElementById('btn4').disabled = false; }
+}
+</script>
+</body>
+</html>
